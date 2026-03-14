@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Robotique</title>
+<style>
+body{
+  font-family:Segoe UI, sans-serif;
+  background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);
+  margin:0;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+
+.container{
+  background:white;
+  width:800px;
+  border-radius:18px;
+  overflow:hidden;
+  box-shadow:0 20px 60px rgba(0,0,0,0.4);
+}
+
+.header{
+  background:linear-gradient(135deg,#667eea,#764ba2);
+  color:white;
+  text-align:center;
+  padding:20px;
+}
+
+.quiz{
+  padding:35px;
+}
+
+.question-number{
+  background:#667eea;
+  color:white;
+  padding:6px 14px;
+  border-radius:20px;
+  display:inline-block;
+  margin-bottom:15px;
+  font-size:13px;
+}
+
+.question{
+  font-size:22px;
+  font-weight:600;
+  margin-bottom:20px;
+}
+
+.icon{
+  font-size:60px;
+  text-align:center;
+  margin-bottom:20px;
+}
+
+.option{
+  border:2px solid #ddd;
+  padding:14px;
+  border-radius:10px;
+  margin-bottom:10px;
+  cursor:pointer;
+  transition:0.2s;
+  font-size:16px;
+}
+
+.option:hover{
+  background:#eef2ff;
+  border-color:#667eea;
+}
+
+.correct{
+  background:#e8f5e9;
+  border-color:#4caf50;
+}
+
+.incorrect{
+  background:#ffebee;
+  border-color:#f44336;
+}
+
+.feedback{
+  margin-top:10px;
+  font-weight:bold;
+  display:none;
+}
+
+.next{
+  margin-top:20px;
+  padding:12px 25px;
+  background:#667eea;
+  color:white;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  display:none;
+}
+
+.progress{
+  height:8px;
+  background:#ddd;
+}
+
+.progress-bar{
+  height:100%;
+  width:0%;
+  background:#667eea;
+  transition:0.3s;
+}
+
+.result{
+  display:none;
+  text-align:center;
+  padding:40px;
+}
+
+.restart{
+  padding:12px 25px;
+  background:#667eea;
+  color:white;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="header">
+    <h2>🤖 Quiz Robotique</h2>
+  </div>
+
+  <div class="progress">
+    <div class="progress-bar" id="progress"></div>
+  </div>
+
+  <div class="quiz" id="quiz">
+
+    <div class="question-number" id="qnum"></div>
+    <div class="icon" id="icon"></div>
+    <div class="question" id="question"></div>
+    <div id="options"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="next" id="next">Question suivante</button>
+
+  </div>
+
+  <div class="result" id="result">
+    <h2>🎉 Résultat</h2>
+    <p id="score"></p>
+    <button class="restart" onclick="restart()">Recommencer</button>
+  </div>
+
+</div>
+
+<script>
+const questions = [
+  {question:"Qu’est-ce qu’un robot ?", icon:"🤖",
+   options:["Une machine programmée pour faire des tâches","Un animal intelligent","Un téléphone portable","Une application"], answer:0},
+
+  {question:"Où travaille souvent un robot industriel ?", icon:"🏭",
+   options:["Dans un parc","Dans une usine","Dans un restaurant","Dans une école"], answer:1},
+
+  {question:"Les robots humanoïdes :", icon:"🧍‍♂️",
+   options:["Ressemblent à des animaux","Ressemblent à l’être humain","Sont utilisés seulement dans les usines","Ne peuvent pas bouger"], answer:1},
+
+  {question:"Quelle est la première étape dans la fabrication d’un robot ?", icon:"📝",
+   options:["Assemblage","Conception","Programmation","Vente"], answer:1},
+
+  {question:"Un robot aspirateur dans une maison est :", icon:"🧹",
+   options:["Robot industriel","Robot de service","Robot explorateur","Robot spatial"], answer:1},
+
+  {question:"Les robots de service servent à :", icon:"🛎️",
+   options:["Jouer au football","Aider dans la vie quotidienne","Construire des maisons","Remplacer les voitures"], answer:1},
+
+  {question:"Quelle partie contient les circuits et les capteurs du robot ?", icon:"💻",
+   options:["Partie mécanique","Partie électronique","Partie plastique","Partie design"], answer:1},
+
+  {question:"Les capteurs (sensors) servent à :", icon:"📡",
+   options:["Décorer le robot","Permettre au robot de percevoir son environnement","Faire marcher le robot","Charger la batterie"], answer:1},
+
+  {question:"Les robots mobiles sont des robots qui :", icon:"🚗",
+   options:["Peuvent se déplacer","Peuvent nager seulement","Restent toujours au même endroit","Peuvent parler seulement"], answer:0},
+
+  {question:"Quelle est une partie importante d’un robot ?", icon:"🔧",
+   options:["Partie électronique","Partie alimentaire","Partie magique","Partie musicale"], answer:0}
+];
+
+let current=0;
+let score=0;
+
+const question=document.getElementById("question");
+const options=document.getElementById("options");
+const feedback=document.getElementById("feedback");
+const next=document.getElementById("next");
+const qnum=document.getElementById("qnum");
+const progress=document.getElementById("progress");
+const icon=document.getElementById("icon");
+
+function load(){
+  let q=questions[current];
+  qnum.textContent="Question "+(current+1)+" / "+questions.length;
+  question.textContent=q.question;
+  icon.textContent=q.icon;
+
+  options.innerHTML="";
+  feedback.style.display="none";
+  next.style.display="none";
+
+  q.options.forEach((opt,i)=>{
+    let div=document.createElement("div");
+    div.className="option";
+    div.textContent=opt;
+    div.onclick=()=>select(div,i);
+    options.appendChild(div);
+  });
+
+  progress.style.width=(current/questions.length)*100+"%";
+}
+
+function select(el,i){
+  let correct=questions[current].answer;
+  document.querySelectorAll(".option").forEach(o=>o.onclick=null);
+
+  if(i===correct){
+    el.classList.add("correct");
+    feedback.textContent="Bonne réponse !";
+    score++;
+  } else {
+    el.classList.add("incorrect");
+    document.querySelectorAll(".option")[correct].classList.add("correct");
+    feedback.textContent="Mauvaise réponse.";
+  }
+  feedback.style.display="block";
+  next.style.display="inline-block";
+}
+
+next.onclick=()=>{
+  current++;
+  if(current<questions.length){
+    load();
+  } else {
+    document.getElementById("quiz").style.display="none";
+    document.getElementById("result").style.display="block";
+    document.getElementById("score").textContent="Score : "+score+" / "+questions.length;
+    progress.style.width="100%";
+  }
+};
+
+function restart(){
+  current=0;
+  score=0;
+  document.getElementById("quiz").style.display="block";
+  document.getElementById("result").style.display="none";
+  load();
+}
+
+load();
+</script>
+
+</body>
+</html>
